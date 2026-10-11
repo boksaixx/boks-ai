@@ -60,10 +60,12 @@ const src = EXEC + '?shell=1' + (qs.get('action') === 'add' ? '&action=add' : ''
 const app = document.getElementById('app'), sp = document.getElementById('sp');
 document.getElementById('login').href = EXEC;
 app.src = src;
-let ready = false;
+let ready = false, inner = null, armed = false, waiting = false;
+window.addEventListener('popstate', () => { if (!inner) return; waiting = true; inner.postMessage({orbit:'back'}, '*'); setTimeout(() => { if (waiting) { waiting = false; history.pushState({boks:1}, ''); } }, 700); });
 window.addEventListener('message', e => {
   const d = e.data || {};
-  if (d.orbit === 'ready') { ready = true; sp.classList.add('hide'); }
+  if (d.orbit === 'ready') { ready = true; sp.classList.add('hide'); inner = e.source; if (!armed) { history.pushState({boks:1}, ''); armed = true; } }
+  if (d.orbit === 'backResult') { waiting = false; if (d.handled) history.pushState({boks:1}, ''); }
   if (d.orbit === 'reload') location.reload();
   if (d.orbit === 'theme' && d.color) document.querySelectorAll('meta[name=theme-color]').forEach(m => m.content = d.color);
 });
