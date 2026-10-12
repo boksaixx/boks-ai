@@ -7,9 +7,9 @@
 <meta name="theme-color" content="#111114" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Boks AI비서">
+<meta name="apple-mobile-web-app-title" content="나만의 AI비서">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Boks AI비서</title>
+<title>나만의 AI비서</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -46,23 +46,32 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:
 <body>
 <div class="splash" id="sp">
   <img src="icon-192.png" alt="">
-  <b>Boks AI비서</b>
+  <b>나만의 AI비서</b>
   <div class="help" id="help">
-    <strong>앱을 불러오지 못했어요</strong><br>
-    아래 순서대로 해 보세요.
-    <ol class="steps">
-      <li><b>크롬에서 바로 열기</b>를 눌러 앱이 열리는지 확인</li>
-      <li>구글 로그인 화면이 나오면 <b>boksaixx</b> 계정으로 로그인</li>
-      <li>크롬에 <b>다른 구글 계정도 함께 로그인</b>돼 있으면 열리지 않을 수 있어요 → <b>계정 골라서 열기</b>로 boksaixx 선택</li>
-      <li>열리면 이 앱으로 돌아와 <b>다시 시도</b></li>
-    </ol>
-    <a class="btn" id="login" target="_blank" rel="noopener">크롬에서 바로 열기</a>
+    <div id="hFirst">
+      <strong>처음 오셨나요? 👋</strong><br>
+      아래 버튼으로 <b>내 구글 계정</b>에서 한 번만 허용하면 돼요.
+      <ol class="steps">
+        <li><b>구글 계정으로 시작하기</b> 누르기 → 초대받은 계정 선택</li>
+        <li><b>‘Google에서 확인하지 않은 앱’</b>이 나오면 <b>고급 → 이동 → 허용</b> (개인이 만든 앱이라 나오는 화면이에요)</li>
+        <li>앱 화면이 뜨면 이 화면으로 돌아와 <b>다시 시도</b></li>
+      </ol>
+    </div>
+    <div id="hErr" style="display:none">
+      <strong>앱을 불러오지 못했어요</strong><br>
+      <ol class="steps">
+        <li><b>구글 계정으로 시작하기</b>를 눌러 앱이 열리는지 확인</li>
+        <li>크롬에 <b>다른 구글 계정도 함께 로그인</b>돼 있으면 → <b>계정 골라서 열기</b></li>
+        <li>열리면 이 화면으로 돌아와 <b>다시 시도</b></li>
+      </ol>
+    </div>
+    <a class="btn" id="login" target="_blank" rel="noopener">구글 계정으로 시작하기</a>
     <a class="btn sub" id="chooser" target="_blank" rel="noopener">계정 골라서 열기</a>
     <button class="btn sub" onclick="location.reload()">다시 시도</button>
   </div>
 </div>
 </div>
-<iframe id="app" title="Boks AI비서" allow="clipboard-read; clipboard-write; fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
+<iframe id="app" title="나만의 AI비서" allow="clipboard-read; clipboard-write; fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
 <div class="install" id="inst"><img src="icon-192.png" alt=""><div class="t"><b>앱으로 설치하기</b>홈 화면에서 바로 열려요</div><button class="go" id="instGo">설치</button><button class="x" id="instX" aria-label="닫기">✕</button></div>
 <script>
 const EXEC = 'https://script.google.com/macros/s/AKfycbyJDT9Pw2xnBQTUBynP6hy3KlXuQCH2PFerxEoF52UDOdy3q5ukA3cM3HW14USMDb8L/exec';
@@ -76,12 +85,14 @@ let ready = false, inner = null, armed = false, waiting = false;
 window.addEventListener('popstate', () => { if (!inner) return; waiting = true; inner.postMessage({orbit:'back'}, '*'); setTimeout(() => { if (waiting) { waiting = false; history.pushState({boks:1}, ''); } }, 700); });
 window.addEventListener('message', e => {
   const d = e.data || {};
-  if (d.orbit === 'ready') { ready = true; sp.classList.add('hide'); inner = e.source; if (!armed) { history.pushState({boks:1}, ''); armed = true; } }
+  if (d.orbit === 'ready') { ready = true; try { localStorage.setItem('ai_ready_once', '1'); } catch (e) {} sp.classList.add('hide'); document.getElementById('help').classList.remove('show'); inner = e.source; if (!armed) { history.pushState({boks:1}, ''); armed = true; } }
   if (d.orbit === 'backResult') { waiting = false; if (d.handled) history.pushState({boks:1}, ''); }
   if (d.orbit === 'reload') location.reload();
   if (d.orbit === 'theme' && d.color) document.querySelectorAll('meta[name=theme-color]').forEach(m => m.content = d.color);
 });
-setTimeout(() => { if (!ready) document.getElementById('help').classList.add('show'); }, 25000);
+let seen = false; try { seen = localStorage.getItem('ai_ready_once') === '1'; } catch (e) {}
+if (seen) { document.getElementById('hFirst').style.display = 'none'; document.getElementById('hErr').style.display = 'block'; }
+setTimeout(() => { if (!ready) document.getElementById('help').classList.add('show'); }, seen ? 25000 : 6000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !ready) location.reload(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 // 설치 안내
